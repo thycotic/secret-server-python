@@ -11,7 +11,13 @@ Python 2.7* and Python 3.*
 You can download the package here or through the pip command:
 
 ``` python
-pip install secret-server-sdk-client
+python pip install secret-server-sdk-client
+```
+
+or
+
+```python
+python -m pip install secret-server-sdk-client
 ```
 
 ## Initial Setup
