@@ -3,7 +3,6 @@
 import os
 class Config:
     SDK_CONFIG = {
-        'path' : '',
         'url' : '',
         'rule' : '',
         'key' : '',

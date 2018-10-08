@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from secret_server.config import Config
+from secret_server.configure import Configure
 from secret_server.commands import Commands
 
 class SDK_Client:

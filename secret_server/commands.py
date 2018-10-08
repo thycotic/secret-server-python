@@ -3,6 +3,7 @@
 from subprocess import Popen, PIPE
 
 from secret_server.config import Config
+from secret_server.configure import Configure
 #from secret_server.sdk_client import SDK_Client
 
 class Commands:
@@ -22,9 +23,9 @@ class Commands:
 
     @classmethod
     def initialize(cls):
-        if Config.SDK_CONFIG['url'] is None:
+        if Configure.CLIENT_CONFIG['url'] is None:
             raise ValueError('Secret Server URL is not set')
-
+        Configure.register_client()
         command = (' -e ', ' -u ', Config.SDK_CONFIG['url'])
 
         if Config.SDK_CONFIG['rule']:
