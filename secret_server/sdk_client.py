@@ -32,8 +32,8 @@ class SDK_Client:
     
     @classmethod
     def get_secret(cls, id):
-        return list(Secret.get(id))
+        return dict(Secret.get(id))
 
     @classmethod
     def get_secret_field(cls, id, field):
-        return Secret.get_field(id, field)
+        return str(Secret.get_field(id, field))
