@@ -8,11 +8,14 @@ setuptools.setup(
     version="2.0",
     author="Paulo Dorado, Ali Falahi",
     author_email="support@thycotic.com",
-    description="Thycotic python client that uses the Thycotic SDK to get secrets from secret server",
+    description="Thycotic python client to get secrets from secret server",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/thycotic/secret-server-python",
     packages=setuptools.find_packages(),
+    install_requires=[
+        'requests',
+    ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
