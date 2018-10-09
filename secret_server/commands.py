@@ -4,7 +4,6 @@ import requests
 import json
 
 class AccessToken:
-
     @classmethod
     def get_token(cls):
         __creds = {"grant_type" : "client_credentials"}
@@ -20,11 +19,26 @@ class AccessToken:
 class Secret:
     
     @classmethod
-    def get_secret(cls, id):
+    def __get_headers(cls):
+        headers = {"Authorization" : "bearer {token}".format(token=AccessToken.get_token()), "Content-Type" : "application/json"}
+        return headers
+
+    @classmethod
+    def get(cls, id):
         if type(id) == int:
             id = str(id)
-        token = AccessToken.get_token()
-        headers = {"Authorization" : "bearer "+token, "Content-Type" : "application/json"}
-        uri = Config.BASE_URL+"/api/v1/secrets/"
-        resp = requests.get(uri+id,headers=headers,)
+        url =  "{base_url}/api/v1/secrets".format(base_url=Config.BASE_URL)
+        uri = '{url}/{id}'.format(url=url,id=id)
+        resp = requests.get(uri,headers=cls.__get_headers())
+        resp.close()
+        return resp.json()
+
+    @classmethod
+    def get_field(cls, id, field):
+        if type(id) == int:
+            id = str(id)
+        url =  "{base_url}/api/v1/secrets".format(base_url=Config.BASE_URL)
+        uri = '{url}/{id}/fields/{field}'.format(url=url, id=id, field=field)
+        resp = requests.get(uri, headers=cls.__get_headers())
+        resp.close()
         return resp.json()
