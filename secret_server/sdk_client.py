@@ -4,6 +4,7 @@ from secret_server.config import Config
 from secret_server.commands import AccessToken
 from secret_server.commands import Secret
 
+
 class SDK_Client:
     __singleton = None
 
@@ -24,12 +25,15 @@ class SDK_Client:
             Config.CLIENT_CONFIG['onboardingKey'] = kwargs['key']
 
         Config.register_client()
-        return "Client Registered Successfully"
     
     @classmethod
     def remove(cls):
         Config.remove_client()
     
     @classmethod
-    def token(cls):
-        
+    def get_secret(cls, id):
+        return list(Secret.get(id))
+
+    @classmethod
+    def get_secret_field(cls, id, field):
+        return Secret.get_field(id, field)
