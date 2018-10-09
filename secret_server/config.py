@@ -19,14 +19,18 @@ class Config:
     
     @classmethod
     def register_client(cls):
-        resp = requests.post(cls.BASE_URL+"/api/v1/sdk-client-accounts", data = cls.CLIENT_CONFIG)
-        with open("creds.json", "w") as outfile:
-            json.dump(resp.json(), outfile)
-        resp.close()
+        if not os.path.exists("creds.json"):
+            resp = requests.post(cls.BASE_URL+"/api/v1/sdk-client-accounts", data = cls.CLIENT_CONFIG)
+            with open("creds.json", "w") as outfile:
+                json.dump(resp.json(), outfile)
+            resp.close()
+            print("Client Registered")
+        else:
+            print("client already registered")
     
     @classmethod
     def remove_client(cls):
         if os.path.exists("creds.json"):
             os.remove("creds.json")
         else:
-            print("The file does not exist")
+            print("Client already unregistered")
