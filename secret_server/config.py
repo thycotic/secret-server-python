@@ -46,17 +46,22 @@ class Config:
     @classmethod
     def remove_client(cls):
         if os.path.exists(cls.__client_path):
-            import secret_server.commands as commands
-            token = commands.AccessToken.get_token()
+            ### I initially had this in here, but realized it requires certain permissions and requires some code change to implement it without 
+            ### relying on the config class for initialization. We need to think about how to better implement it
 
-            with open(cls.__client_path) as outfile:
-                client_id = json.load(outfile)["id"]
+            # import secret_server.commands as commands
+            # token = commands.AccessToken.get_token()
+
+            # with open(cls.__client_path) as outfile:
+            #     client_id = json.load(outfile)["id"]
             
-            resp = requests.post("{base_url}/api/v1/sdk-client-accounts/{id}/revoke".format(base_url=cls.BASE_URL,id=client_id), headers={"Authorization" : "bearer {token}".format(token=token)})
-            if resp.status_code is 200:
-                print("Client unregistered")
-                os.remove(cls.__client_path)
-                os.remove(cls.__creds_path)
-            resp.close()
+            # resp = requests.post("{base_url}/api/v1/sdk-client-accounts/{id}/revoke".format(base_url=cls.BASE_URL,id=client_id), headers={"Authorization" : "bearer {token}".format(token=token)})
+            # if resp.status_code is 200:
+            #     print("Client unregistered")
+            #     os.remove(cls.__client_path)
+            #     os.remove(cls.__creds_path)
+            # resp.close()
+            os.remove(cls.__client_path)
+            os.remove(cls.__creds_path)
         else:
             print("Client already unregistered")
