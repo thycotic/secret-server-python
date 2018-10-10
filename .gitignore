@@ -102,4 +102,7 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+# testing files that should be ignored
 tests.py
+creds.json
+client_info.json
