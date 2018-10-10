@@ -11,12 +11,19 @@ class DataProtection:
 
     @classmethod
     def get_master_key(cls):
+        path = "masterKey.config"
         try:
             if not os.path.exists('masterKey.config'):
-                random = os.urandom(32)
-                master_key = b64encode(random)
-                print(master_key)
-        except:
-            master_key
+                master_key = b64encode(os.urandom(32)).decode('utf-8')
+                open(path, "w").write(master_key)
+            else:
+                master_key = open(path).read()
+            return  master_key
+        except Exception as err:
+            print(err)
+            raise
+    
+    @classmethod
+    def encrypt(cls):
 
 DataProtection().get_master_key()
