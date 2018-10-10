@@ -21,8 +21,21 @@ class Config:
     def register_client(cls):
         if not os.path.exists("creds.json"):
             resp = requests.post(cls.BASE_URL+"/api/v1/sdk-client-accounts", data = cls.CLIENT_CONFIG)
+
+            creds = {
+                "client_id" : "sdk-client-"+resp.json()["clientId"],
+                "client_secret" : resp.json()["clientSecret"],
+                "grant_type" : "client_credentials"
+                }
             with open("creds.json", "w") as outfile:
-                json.dump(resp.json(), outfile)
+                json.dump(creds, outfile)
+
+            config = {
+                "id" : resp.json()["id"]
+            }
+            with open("client_info.json", "w") as outfile:
+                json.dump(config, outfile)
+
             resp.close()
             print("Client Registered")
         else:
@@ -32,5 +45,6 @@ class Config:
     def remove_client(cls):
         if os.path.exists("creds.json"):
             os.remove("creds.json")
+            json.load()
         else:
             print("Client already unregistered")

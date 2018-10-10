@@ -6,14 +6,10 @@ import json
 class AccessToken:
     @classmethod
     def get_token(cls):
-        __creds = {"grant_type" : "client_credentials"}
-
         with open("creds.json","r") as outfile:
             load = json.load(outfile)
-            __creds["client_id"] = "sdk-client-"+load["clientId"]
-            __creds["client_secret"] = load["clientSecret"]
 
-        resp = requests.post(Config.BASE_URL+"/oauth2/token", data=__creds)
+        resp = requests.post(Config.BASE_URL+"/oauth2/token", data=load)
         return resp.json()["access_token"]
 
 class Secret:
