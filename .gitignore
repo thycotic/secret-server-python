@@ -110,3 +110,4 @@ venv.bak/
 tests.py
 creds.json
 client_info.json
+masterKey.config
