@@ -42,4 +42,3 @@ class Secret:
         resp = requests.get(uri, headers=cls.__get_headers())
         resp.close()
         return resp.json()
-    
