@@ -4,7 +4,9 @@ import requests
 import json
 import platform
 import os
+
 from uuid import uuid4
+from secret_server.data_protection import DataProtection
 
 
 class Config:
@@ -16,27 +18,38 @@ class Config:
         'onboardingKey' : '' or os.environ.get('RULE_KEY')
     }   
     BASE_URL = '' or os.environ.get('SECRET_SERVER_BASE_URL')
-    __creds_path = "creds.json"
-    __client_path = "client_info.json"
+
+    CREDS_PATH = "creds.json"
+    CLIENT_PATH = "client_info.json"
+
+    __encrypt = DataProtection().encrypt
+    __decrypt = DataProtection().decrypt
 
     @classmethod
     def register_client(cls):
-        if not os.path.exists(cls.__creds_path):
+        if not os.path.exists(cls.CREDS_PATH):
             resp = requests.post(cls.BASE_URL+"/api/v1/sdk-client-accounts", data = cls.CLIENT_CONFIG)
-
-            creds = {
-                "client_id" : "sdk-client-"+resp.json()["clientId"],
-                "client_secret" : resp.json()["clientSecret"],
-                "grant_type" : "client_credentials"
+            try:
+                creds = {
+                    "client_id" : "sdk-client-"+resp.json()["clientId"],
+                    "client_secret" : resp.json()["clientSecret"],
+                    "grant_type" : "client_credentials"
                 }
-            with open(cls.__creds_path, "w") as outfile:
-                json.dump(creds, outfile)
+                open(cls.CREDS_PATH , "w").write(cls.__encrypt(creds))
+                creds = None
+            except IOError as e:
+                raise IOError("Couldn't Save credentials: " + e.message)
 
-            config = {
-                "id" : resp.json()["id"]
-            }
-            with open(cls.__client_path, "w") as outfile:
-                json.dump(config, outfile)
+            try:
+                config = {
+                    "id" : resp.json()["id"],
+                    "endpoint" : cls.BASE_URL
+                }
+                open(cls.CLIENT_PATH , "w").write(cls.__encrypt(config))
+                config = None
+                cls.BASE_URL = cls.__decrypt(cls.CLIENT_PATH)["endpoint"]
+            except IOError as e:
+                raise IOError("Couldn't Save client info: " + e.message)
 
             resp.close()
             print("Client Registered")
@@ -44,24 +57,24 @@ class Config:
             print("client already registered")
     
     @classmethod
-    def remove_client(cls):
-        if os.path.exists(cls.__client_path):
-            ### I initially had this in here, but realized it requires certain permissions and requires some code change to implement it without 
-            ### relying on the config class for initialization. We need to think about how to better implement it
+    def remove_client(cls, revoke):
+        if os.path.exists(cls.CLIENT_PATH):
+            if revoke:
+                import secret_server.commands as commands
+                token = commands.AccessToken.get_token()
 
-            # import secret_server.commands as commands
-            # token = commands.AccessToken.get_token()
-
-            # with open(cls.__client_path) as outfile:
-            #     client_id = json.load(outfile)["id"]
-            
-            # resp = requests.post("{base_url}/api/v1/sdk-client-accounts/{id}/revoke".format(base_url=cls.BASE_URL,id=client_id), headers={"Authorization" : "bearer {token}".format(token=token)})
-            # if resp.status_code is 200:
-            #     print("Client unregistered")
-            #     os.remove(cls.__client_path)
-            #     os.remove(cls.__creds_path)
-            # resp.close()
-            os.remove(cls.__client_path)
-            os.remove(cls.__creds_path)
+                client_id = cls.__decrypt(cls.CLIENT_PATH)["id"]
+                
+                resp = requests.post("{base_url}/api/v1/sdk-client-accounts/{id}/revoke".format(base_url=cls.BASE_URL,id=client_id), headers={"Authorization" : "bearer {token}".format(token=token)})
+                if resp.status_code is 200:
+                    print("Client unregistered")
+                    os.remove(cls.CLIENT_PATH)
+                    os.remove(cls.CREDS_PATH)
+                else:
+                    print(resp.json()["body"])
+                resp.close()
+            else:
+                os.remove(cls.CLIENT_PATH)
+                os.remove(cls.CREDS_PATH)
         else:
             print("Client already unregistered")
