@@ -2,16 +2,13 @@
 import requests
 import json
 import os
+import time
 
 from secret_server.data_protection import DataProtection
 from secret_server.config import Config
 
-if os.path.exists(Config.CLIENT_PATH):
-    with open(Config.CLIENT_PATH, "r") as outfile:
-        BASE_URL = DataProtection().decrypt(Config.CLIENT_PATH)["endpoint"]
-        URL = "{base_url}/api/v1/secrets".format(base_url=BASE_URL)
-else:
-    raise Exception("Client not registered, or corrupted")
+BASE_URL = Config.BASE_URL
+URL = "{base_url}/api/v1/secrets".format(base_url=BASE_URL)
 
 class AccessToken:
 
