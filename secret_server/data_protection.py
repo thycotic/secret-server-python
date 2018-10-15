@@ -79,8 +79,7 @@ class DataProtection:
         try:
             raw = b64decode(open(file, 'r').read())
         except IOError as e:
-           "Couldn't load credentials: " + e
-           raise
+           raise IOError(e)
         #slice the bytes to get the salt, iv, tag, and the ciphertext
         salt =  raw[:64]
         iv = raw[64:80]
