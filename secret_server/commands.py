@@ -15,7 +15,7 @@ class AccessToken:
     @classmethod
     def get_token(cls):
         creds = DataProtection().decrypt(Config.CREDS_PATH)
-        resp = requests.post(BASE_URL+"/oauth2/token", data=creds)
+        resp = requests.post(BASE_URL+"/oauth2/token", data=creds, verify=False)
         resp.close()
         creds = None
         return resp.json()["access_token"]
@@ -33,7 +33,7 @@ class Secret:
             s_id = str(s_id)
 
         uri = "{url}/{id}".format(url=URL,id=s_id)
-        resp = requests.get(uri,headers=cls.__get_headers())
+        resp = requests.get(uri,headers=cls.__get_headers(), verify=False)
         resp.close()
         return resp.json()
 
@@ -43,6 +43,6 @@ class Secret:
             s_id = str(s_id)
             
         uri = "{url}/{id}/fields/{field}".format(url=URL, id=s_id, field=field)
-        resp = requests.get(uri, headers=cls.__get_headers())
+        resp = requests.get(uri, headers=cls.__get_headers(), verify=False)
         resp.close()
         return resp.json()
