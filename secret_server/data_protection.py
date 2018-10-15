@@ -2,6 +2,7 @@ import os
 import platform
 import json 
 
+from uuid import uuid4
 from base64 import (b64encode, b64decode)
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
@@ -22,16 +23,19 @@ class DataProtection:
 
     @classmethod
     def get_master_key(cls):
-        path= os.path.join(cls.get_home_directory(), ".thycotic", "thycotic-sdk-client")
+        path= os.path.join(cls.get_home_directory(), ".thycotic", "thycotic-python-client")
         name = os.path.join(path, "masterKey.config")
         try:
             if not os.path.exists(path):
                 os.makedirs(path)
-                master_key = b64encode(os.urandom(32))
+                master_key = b64encode(os.urandom(32)).decode("UTF-8")
+                open(name, "w").write(master_key)
+            elif not os.path.isfile(name):
+                master_key = b64encode(os.urandom(32)).decode("UTF-8")
                 open(name, "w").write(master_key)
             else:
                 master_key = open(name).read()
-            return  master_key
+            return  master_key.encode("UTF-8")
         except IOError as e:
             raise IOError(e)
         except ValueError as e:
@@ -50,7 +54,7 @@ class DataProtection:
         try:
             return kdf.derive(cls.get_master_key())
         except IOError as e:
-            raise IOError(e.message)
+            raise IOError(e)
 
     @classmethod
     def encrypt(cls, data):
@@ -64,18 +68,18 @@ class DataProtection:
         ).encryptor()
 
         try:
-            ciphertext = encryptor.update(json.dumps(data)) + encryptor.finalize()
+            ciphertext = encryptor.update(json.dumps(data).encode("UTF-8")) + encryptor.finalize()
             payload = salt + iv + encryptor.tag + ciphertext
-            return b64encode(payload)
+            return b64encode(payload).decode("UTF-8")
         except Exception as e:
-            raise Exception(e.message)
+            raise Exception(e)
 
     @classmethod
     def decrypt(cls, file):
         try:
             raw = b64decode(open(file, 'r').read())
         except IOError as e:
-           "Couldn't load credentials: " + e.message
+           "Couldn't load credentials: " + e
            raise
         #slice the bytes to get the salt, iv, tag, and the ciphertext
         salt =  raw[:64]
@@ -89,6 +93,7 @@ class DataProtection:
             backend=default_backend()
         ).decryptor()
         try:
-            return json.loads(decryptor.update(ciphertext) + decryptor.finalize())
+            decrypted = (decryptor.update(ciphertext) + decryptor.finalize())
+            return json.loads(decrypted.decode("UTF-8"))
         except Exception as e:
-            raise Exception(e.message)
+            raise Exception(e)
