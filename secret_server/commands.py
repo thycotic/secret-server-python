@@ -7,7 +7,7 @@ import time
 from secret_server.data_protection import DataProtection
 from secret_server.config import Config
 
-BASE_URL = Config.BASE_URL
+BASE_URL = DataProtection().decrypt(Config.CLIENT_PATH)["endpoint"]
 URL = "{base_url}/api/v1/secrets".format(base_url=BASE_URL)
 
 class AccessToken:
