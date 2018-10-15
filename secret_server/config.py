@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import requests
 import json
 import platform
@@ -28,7 +27,7 @@ class Config:
     @classmethod
     def register_client(cls):
         if not os.path.exists(cls.CREDS_PATH):
-            resp = requests.post(cls.BASE_URL+"/api/v1/sdk-client-accounts", data = cls.CLIENT_CONFIG)
+            resp = requests.post(cls.BASE_URL+"/api/v1/sdk-client-accounts", data = cls.CLIENT_CONFIG, verify=False)
             try:
                 creds = {
                     "client_id" : "sdk-client-"+resp.json()["clientId"],
@@ -38,7 +37,7 @@ class Config:
                 open(cls.CREDS_PATH , "w").write(cls.__encrypt(creds))
                 creds = None
             except IOError as e:
-                raise IOError("Couldn't Save credentials: " + e.message)
+                raise IOError("Couldn't Save credentials: ", e)
 
             try:
                 config = {
@@ -49,7 +48,7 @@ class Config:
                 config = None
                 cls.BASE_URL = cls.__decrypt(cls.CLIENT_PATH)["endpoint"]
             except IOError as e:
-                raise IOError("Couldn't Save client info: " + e.message)
+                raise IOError("Couldn't Save client info: ", e)
 
             resp.close()
             print("Client Registered")
@@ -65,7 +64,7 @@ class Config:
 
                 client_id = cls.__decrypt(cls.CLIENT_PATH)["id"]
                 
-                resp = requests.post("{base_url}/api/v1/sdk-client-accounts/{id}/revoke".format(base_url=cls.BASE_URL,id=client_id), headers={"Authorization" : "bearer {token}".format(token=token)})
+                resp = requests.post("{base_url}/api/v1/sdk-client-accounts/{id}/revoke".format(base_url=cls.BASE_URL,id=client_id), headers={"Authorization" : "bearer {token}".format(token=token)},verify=False)
                 if resp.status_code is 200:
                     print("Client unregistered")
                     os.remove(cls.CLIENT_PATH)
