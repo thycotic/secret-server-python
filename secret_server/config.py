@@ -34,7 +34,8 @@ class Config:
                     "client_secret" : resp.json()["clientSecret"],
                     "grant_type" : "client_credentials"
                 }
-                open(cls.CREDS_PATH , "w").write(cls.__encrypt(creds))
+                creds = cls.__encrypt(creds)
+                open(cls.CREDS_PATH , "w").write(creds)
                 creds = None
             except IOError as e:
                 raise IOError("Couldn't Save credentials: ", e)
@@ -44,9 +45,9 @@ class Config:
                     "id" : resp.json()["id"],
                     "endpoint" : cls.BASE_URL
                 }
-                open(cls.CLIENT_PATH , "w").write(cls.__encrypt(config))
+                config = cls.__encrypt(config)
+                open(cls.CLIENT_PATH , "w").write(config)
                 config = None
-                cls.BASE_URL = cls.__decrypt(cls.CLIENT_PATH)["endpoint"]
             except IOError as e:
                 raise IOError("Couldn't Save client info: ", e)
 
