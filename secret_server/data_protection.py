@@ -11,7 +11,6 @@ from cryptography.hazmat.primitives.ciphers import (Cipher, algorithms, modes)
 
 class DataProtection:
     SALT = os.urandom(64)
-    FILE_Path = "creds.json"
 
     @classmethod
     def get_home_directory(cls):
@@ -67,18 +66,14 @@ class DataProtection:
         try:
             ciphertext = encryptor.update(json.dumps(data)) + encryptor.finalize()
             payload = salt + iv + encryptor.tag + ciphertext
+            return b64encode(payload)
         except Exception as e:
             raise Exception(e.message)
-        
-        try:
-            open(cls.FILE_Path , "w").write(b64encode(payload))
-        except IOError as e:
-            raise IOError("Couldn't Save credentials: " + e.message)
 
     @classmethod
-    def decrypt(cls):
+    def decrypt(cls, file):
         try:
-            raw = b64decode(open(cls.FILE_Path, 'r').read())
+            raw = b64decode(open(file, 'r').read())
         except IOError as e:
            "Couldn't load credentials: " + e.message
            raise
