@@ -1,21 +1,23 @@
 # -*- coding: utf-8 -*-
-# from secret_server.config import Config
 import requests
 import json
 import os
 
 from secret_server.data_protection import DataProtection
+from secret_server.config import Config
 
-if os.path.exists("client_info.json"):
-    with open("client_info.json", "r") as outfile:
-        BASE_URL = json.load(outfile)["endpoint"]
+if os.path.exists(Config.CLIENT_PATH):
+    with open(Config.CLIENT_PATH, "r") as outfile:
+        BASE_URL = DataProtection().decrypt(Config.CLIENT_PATH)["endpoint"]
         URL = "{base_url}/api/v1/secrets".format(base_url=BASE_URL)
+else:
+    raise Exception("Client not registered, or corrupted")
 
 class AccessToken:
 
     @classmethod
     def get_token(cls):
-        creds = DataProtection().decrypt()
+        creds = DataProtection().decrypt(Config.CREDS_PATH)
         resp = requests.post(BASE_URL+"/oauth2/token", data=creds)
         resp.close()
         creds = None
