@@ -7,7 +7,6 @@ import os
 from uuid import uuid4
 from secret_server.data_protection import DataProtection
 
-
 class Config:
     CLIENT_CONFIG = {
         'clientId' : uuid4(),
@@ -15,7 +14,7 @@ class Config:
         'name' : platform.node(),
         'ruleName' : '' or os.environ.get('RULE_NAME'),
         'onboardingKey' : '' or os.environ.get('RULE_KEY')
-    }   
+    }
     BASE_URL = '' or os.environ.get('SECRET_SERVER_BASE_URL')
 
     CREDS_PATH = "creds.json"
@@ -28,24 +27,24 @@ class Config:
     def register_client(cls):
         if not os.path.exists(cls.CREDS_PATH):
             resp = requests.post(cls.BASE_URL+"/api/v1/sdk-client-accounts", data = cls.CLIENT_CONFIG, verify=False)
+            creds = {
+                "client_id" : "sdk-client-"+resp.json()["clientId"],
+                "client_secret" : resp.json()["clientSecret"],
+                "grant_type" : "client_credentials"
+            }
+            creds = cls.__encrypt(creds)
             try:
-                creds = {
-                    "client_id" : "sdk-client-"+resp.json()["clientId"],
-                    "client_secret" : resp.json()["clientSecret"],
-                    "grant_type" : "client_credentials"
-                }
-                creds = cls.__encrypt(creds)
                 open(cls.CREDS_PATH , "w").write(creds)
                 creds = None
             except IOError as e:
                 raise IOError("Couldn't Save credentials: ", e)
 
+            config = {
+                "id" : resp.json()["id"],
+                "endpoint" : cls.BASE_URL
+            }
+            config = cls.__encrypt(config)
             try:
-                config = {
-                    "id" : resp.json()["id"],
-                    "endpoint" : cls.BASE_URL
-                }
-                config = cls.__encrypt(config)
                 open(cls.CLIENT_PATH , "w").write(config)
                 config = None
             except IOError as e:
@@ -62,19 +61,15 @@ class Config:
             if revoke:
                 import secret_server.commands as commands
                 token = commands.AccessToken.get_token()
-
                 client_id = cls.__decrypt(cls.CLIENT_PATH)["id"]
-                
                 resp = requests.post("{base_url}/api/v1/sdk-client-accounts/{id}/revoke".format(base_url=cls.BASE_URL,id=client_id), headers={"Authorization" : "bearer {token}".format(token=token)},verify=False)
-                if resp.status_code is 200:
-                    print("Client unregistered")
-                    os.remove(cls.CLIENT_PATH)
-                    os.remove(cls.CREDS_PATH)
-                else:
+
+                if resp.status_code is not 200:
                     print(resp.json()["body"])
+                    
                 resp.close()
-            else:
-                os.remove(cls.CLIENT_PATH)
-                os.remove(cls.CREDS_PATH)
+            os.remove(cls.CLIENT_PATH)
+            os.remove(cls.CREDS_PATH)
+            print("Client unregistered")
         else:
             print("Client already unregistered")
