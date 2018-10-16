@@ -1,68 +1,48 @@
 # -*- coding: utf-8 -*-
+import requests
+import json
+import os
+import time
 
-from subprocess import Popen, PIPE
-
+from secret_server.data_protection import DataProtection
 from secret_server.config import Config
-#from secret_server.sdk_client import SDK_Client
 
-class Commands:
-    @classmethod
-    def execute(cls, args):
-        if Config.has_valid_path():
-            p = Popen(' '.join((Config.get_sdk_file_path(),) + args), shell=True, stdout=PIPE, stderr=PIPE)
-            stdout, stderr = p.communicate()
-            statuscode = p.returncode
+BASE_URL = Config.BASE_URL or DataProtection().decrypt(Config.CLIENT_PATH)["endpoint"]
+URL = "{base_url}/api/v1/secrets".format(base_url=BASE_URL)
 
-            if(statuscode != 0):
-                raise ValueError(stdout.decode('utf-8') + " Thycotic SDK configuration is invalid.")
-        else:
-            raise ValueError('SDK client path is invalid')
-
-        return [stdout.decode('utf-8'), stderr, statuscode]
+class AccessToken:
 
     @classmethod
-    def initialize(cls):
-        if Config.SDK_CONFIG['url'] is None:
-            raise ValueError('Secret Server URL is not set')
+    def get_token(cls):
+        creds = DataProtection().decrypt(Config.CREDS_PATH)
+        resp = requests.post(BASE_URL+"/oauth2/token", data=creds, verify=False)
+        resp.close()
+        creds = None
+        return resp.json()["access_token"]
 
-        command = (' -e ', ' -u ', Config.SDK_CONFIG['url'])
-
-        if Config.SDK_CONFIG['rule']:
-            command += (' -r ', Config.SDK_CONFIG['rule'])
-
-        if Config.SDK_CONFIG['key']:
-            command += (' -k ', Config.SDK_CONFIG['key'])
-
-        return cls.execute(('init',) + command)[0]
+class Secret:
 
     @classmethod
-    def get_secret(cls, id, **kwargs):
-        if not isinstance(id, int) or id <= 0 :
-            raise ValueError('id must be a positive integer')
-
-        command = ('secret -s ', id.__str__())
-
-        if 'field' in kwargs.keys():
-            command += (' -ad ',) if(kwargs['field'] == 'all') else (' -f ', kwargs['field'])
-
-        result = cls.execute(command)
-
-        return result[0]
+    def __get_headers(cls):
+        headers = {"Authorization" : "bearer {token}".format(token=AccessToken.get_token()), "Content-Type" : "application/json"}
+        return headers
 
     @classmethod
-    def set_cache(cls):
-        command = None
-        if(Config.has_valid_cache()):
-            command = (' cache -s ', Config.SDK_CONFIG['cache_strategy'].__str__())
+    def get(cls, s_id):
+        if type(s_id) == int:
+            s_id = str(s_id)
 
-            if Config.SDK_CONFIG['cache_age'] is not None:
-                command += (' -a ', Config.SDK_CONFIG['cache_age'].__str__())
-        return cls.execute(command)[0]
-
-    @classmethod
-    def clear_cache(cls):
-        return cls.execute(('cache', '-b'))[0]
+        uri = "{url}/{id}".format(url=URL,id=s_id)
+        resp = requests.get(uri,headers=cls.__get_headers(), verify=False)
+        resp.close()
+        return resp.json()
 
     @classmethod
-    def remove(cls):
-        return cls.execute(('remove', '-c'))[0]
+    def get_field(cls, s_id, field):
+        if type(s_id) == int:
+            s_id = str(s_id)
+            
+        uri = "{url}/{id}/fields/{field}".format(url=URL, id=s_id, field=field)
+        resp = requests.get(uri, headers=cls.__get_headers(), verify=False)
+        resp.close()
+        return resp.json()

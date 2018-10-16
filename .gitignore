@@ -102,3 +102,12 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+#workspace settings
+.vscode/
+
+# testing files that should be ignored
+tests.py
+creds.json
+client_info.json
+masterKey.config

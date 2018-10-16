@@ -1,33 +1,47 @@
 # -*- coding: utf-8 -*-
-
 from secret_server.config import Config
-from secret_server.commands import Commands
+from secret_server.commands import AccessToken
+from secret_server.commands import Secret
+
 
 class SDK_Client:
-    singleton = None
+    __singleton = None
 
     def __new__(cls, *args, **kwargs):
-        if not cls.singleton:
-            cls.singleton = object.__new__(SDK_Client)
-        return cls.singleton
+        if not cls.__singleton:
+            cls.__singleton = object.__new__(SDK_Client)
+        return cls.__singleton
 
     def __init__(self):
-        self.config = Config()
-        self.commands = Commands()
+        #self.commands = Commands()
+        self.token = AccessToken.get_token
 
     @classmethod
-    def configure(cls, path, url, rule, key):
-        Config.SDK_CONFIG['path'] = path
-        Config.SDK_CONFIG['url'] = url
-        Config.SDK_CONFIG['rule'] = rule
-        Config.SDK_CONFIG['key'] = key
+    def configure(cls, **kwargs):
+        """
+Configures and registers the client in Secret Server. This method takes a key word args for url, rule, and key or a dict object. 
+configure(url="https://youre-ss-url",rule="rule-name", key="rule-key")
+        """
+        if kwargs:
+            Config.BASE_URL = kwargs['url']
+            Config.CLIENT_CONFIG['ruleName'] = kwargs['rule']
+            Config.CLIENT_CONFIG['onboardingKey'] = kwargs['key']
+
+        Config.register_client()
+    
+    @classmethod
+    def remove(cls, revoke=False):
+        """
+        Removes the clients configuration and stored credentials. This doesn't revoke the client in Secret Server
+        """
+        Config.remove_client(revoke)
+    
+    @classmethod
+    def get_secret(cls, s_id):
+        """This methods gets a Secret by ID (s_id)"""
+        return dict(Secret.get(s_id))
 
     @classmethod
-    def configure_from_env(cls):
-        Config.set_config_from_env()
-
-    @classmethod
-    def set_cache(cls, cache_strategy, cache_age = 0):
-        Config.SDK_CONFIG['cache_strategy'] = cache_strategy
-        Config.SDK_CONFIG['cache_age'] = cache_age
-        return Commands.set_cache()
+    def get_secret_field(cls, s_id, field):
+        """This methods gets a Secret field by ID(s_id) and field Slug"""
+        return str(Secret.get_field(s_id, field))

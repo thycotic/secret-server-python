@@ -1,46 +1,75 @@
 # -*- coding: utf-8 -*-
-
+import requests
+import json
+import platform
 import os
+
+from uuid import uuid4
+from secret_server.data_protection import DataProtection
+
 class Config:
-    SDK_CONFIG = {
-        'path' : '',
-        'url' : '',
-        'rule' : '',
-        'key' : '',
-        'cache_strategy' : 0,
-        'cache_age' : 0
+    CLIENT_CONFIG = {
+        'clientId' : uuid4(),
+        'description' : 'Machine: {node}, OS: {system} - Python {version}'.format(node = platform.node(), system = platform.system(), version = platform._sys_version()[1]),
+        'name' : platform.node(),
+        'ruleName' : '' or os.environ.get('RULE_NAME'),
+        'onboardingKey' : '' or os.environ.get('RULE_KEY')
     }
+    BASE_URL = '' or os.environ.get('SECRET_SERVER_BASE_URL')
+
+    CREDS_PATH = "creds.json"
+    CLIENT_PATH = "client_info.json"
+
+    __encrypt = DataProtection().encrypt
+    __decrypt = DataProtection().decrypt
 
     @classmethod
-    def get_sdk_file_path(cls):
-        sdk_file = os.path.join(cls.SDK_CONFIG['path'], 'tss')
-        return os.path.join(cls.SDK_CONFIG['path'], 'tss.exe') if(not os.path.isfile(sdk_file)) else sdk_file
+    def register_client(cls):
+        if not os.path.exists(cls.CREDS_PATH):
+            resp = requests.post(cls.BASE_URL+"/api/v1/sdk-client-accounts", data = cls.CLIENT_CONFIG, verify=False)
+            creds = {
+                "client_id" : "sdk-client-"+resp.json()["clientId"],
+                "client_secret" : resp.json()["clientSecret"],
+                "grant_type" : "client_credentials"
+            }
+            creds = cls.__encrypt(creds)
+            try:
+                open(cls.CREDS_PATH , "w").write(creds)
+                creds = None
+            except IOError as e:
+                raise IOError("Couldn't Save credentials: ", e)
 
+            config = {
+                "id" : resp.json()["id"],
+                "endpoint" : cls.BASE_URL
+            }
+            config = cls.__encrypt(config)
+            try:
+                open(cls.CLIENT_PATH , "w").write(config)
+                config = None
+            except IOError as e:
+                raise IOError("Couldn't Save client info: ", e)
+
+            resp.close()
+            print("Client Registered")
+        else:
+            print("client already registered")
+    
     @classmethod
-    def get_strategy(cls):
-        strat_dict = ['Never Cache', 'Server Then Cache', 'Cache Then Server', 'Cache Then Server Fallback on Expired Cache']
+    def remove_client(cls, revoke):
+        if os.path.exists(cls.CLIENT_PATH):
+            if revoke:
+                import secret_server.commands as commands
+                token = commands.AccessToken.get_token()
+                client_id = cls.__decrypt(cls.CLIENT_PATH)["id"]
+                resp = requests.post("{base_url}/api/v1/sdk-client-accounts/{id}/revoke".format(base_url=cls.BASE_URL,id=client_id), headers={"Authorization" : "bearer {token}".format(token=token)},verify=False)
 
-        if (not isinstance(cls.SDK_CONFIG['cache_strategy'], int) or cls.SDK_CONFIG['cache_strategy'] < 0
-                or cls.SDK_CONFIG['cache_strategy'] >= strat_dict.__len__()):
-            raise ValueError('Invalid cache strategy. Please look at SDK manual for cache settings information.')
-
-        return strat_dict[cls.SDK_CONFIG['cache_strategy']]
-
-    @classmethod
-    def has_valid_path(cls):
-        return os.path.isfile(cls.get_sdk_file_path())
-
-    @classmethod
-    def has_valid_cache(cls):
-        cls.get_strategy()
-        if (not isinstance(cls.SDK_CONFIG['cache_age'], int) or
-                (cls.SDK_CONFIG['cache_strategy'] > 0 and cls.SDK_CONFIG['cache_age'] <= 0)):
-            raise ValueError('Cache age must be a positive integer when trying to set cache')
-        return True
-
-    @classmethod
-    def set_config_from_env(cls):
-        cls.SDK_CONFIG['path'] = os.environ.get('SDK_CLIENT_PATH')
-        cls.SDK_CONFIG['url'] = os.environ.get('SECRET_SERVER_URL')
-        cls.SDK_CONFIG['rule'] = os.environ.get('SDK_CLIENT_RULE')
-        cls.SDK_CONFIG['key'] = os.environ.get('SDK_CLIENT_KEY')
+                if resp.status_code is not 200:
+                    print(resp.json()["body"])
+                    
+                resp.close()
+            os.remove(cls.CLIENT_PATH)
+            os.remove(cls.CREDS_PATH)
+            print("Client unregistered")
+        else:
+            print("Client already unregistered")

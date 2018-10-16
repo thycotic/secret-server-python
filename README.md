@@ -89,7 +89,7 @@ connection to Secret Server instance.
 
 ## Usage
 
-Fetch a secret by ID 
+Fetch a secret by ID
 
 ```python
 # retrieve the full representation of a secret
