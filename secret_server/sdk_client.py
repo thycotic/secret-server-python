@@ -13,7 +13,6 @@ class SDK_Client:
         return cls.__singleton
 
     def __init__(self):
-        #self.commands = Commands()
         self.token = AccessToken.get_token
 
     @classmethod
