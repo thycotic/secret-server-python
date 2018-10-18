@@ -17,7 +17,6 @@ class AccessToken:
         creds = None
         return handler(resp)["access_token"]
 
-
 class Secret:
 
     @classmethod
