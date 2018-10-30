@@ -19,34 +19,52 @@ class SdkClient:
     @classmethod
     def configure(cls, **kwargs):
         """
-Configures and registers the client in Secret Server. This method takes a key word args for url, rule, and key or a dict
-object.
-configure(url="https://youre-ss-url",rule="rule-name", key="rule-key")
+        Configures the client connection to Secret Server. If no values are provided then it will look for
+        environment variables
+
+        :param dict | str kwargs: Key/Value pairs to register the client see below
+        :keyword str url: The Secret Server Url
+        :keyword str rule: The Rule Name
+        :keyword str key: The generated rule key
+
         """
         if kwargs:
             Config.BASE_URL = str(kwargs['url']).rstrip("/")
             Config.CLIENT_CONFIG['ruleName'] = kwargs['rule']
-            Config.CLIENT_CONFIG['onboardingKey'] = kwargs['key']
+            if "key" in kwargs:
+                Config.CLIENT_CONFIG['onboardingKey'] = kwargs['key']
 
         Config.register_client()
     
     @classmethod
     def remove(cls, revoke=False):
-        # type: (*bool) -> None
+        # type: (bool) -> None
         """
-        Removes the clients configuration and stored credentials. By default this doesn't revoke the client in Secret
-        Server
+        Removes the client configuration from the machine with optional revocation
+
+        :param bool revoke: True/False to revoke client in Secret Server. Default is False
         """
         Config.remove_client(revoke)
     
     @classmethod
     def get_secret(cls, s_id):
         # type: (int) -> dict
-        """This methods gets a Secret by ID (s_id)"""
+        """
+        Retrieves a Secret by Id and returns a secret object
+
+        :param int s_id: The Secret Id
+        :return: Secret object (dict)
+        """
         return dict(Secret.get(s_id))
 
     @classmethod
     def get_secret_field(cls, s_id, field):
         # type: (int, str) -> str
-        """This methods gets a Secret field by ID(s_id) and field Slug"""
+        """
+        Retrieves a Secret by Id and field slug (name) and returns a string
+
+        :param int s_id: The Secret Id
+        :param str field: The field slug
+        :return: str
+        """
         return str(Secret.get_field(s_id, field))

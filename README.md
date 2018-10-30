@@ -6,47 +6,47 @@ A Python package to facilitate the connection to the Thycotic Secret Server
 
 Python 2.7* and Python 3.*
 
+Knowledge of Secret Server's SDK Client Accounts to set up the rules
+
 ## Downloading the package
 
 You can download the package here or through the pip command:
 
-``` python
+``` commandline
 python pip install secret-server-sdk-client
 ```
 
 or
 
-```python
+```commandline
 python -m pip install secret-server-sdk-client
 ```
 
 ## Initial Setup
 
-Import the SDK Client
-
-``` python
-from secret_server.sdk_client import SDK_Client
-```
-
-Instantiate the ```SDK_Client``` object
+Import the SDK Client and instantiate it
 
 ```python
-client = SDK_Client
+from secret_server.sdk_client import SdkClient
+client = SdkClient
+
 ```
 
 Configure the connection to your Secret Server instance by using the
 
-``` python
+```
 configure(<url>, <rule>, <key>)
 ```
 
-**required parameters:**
+**parameters:**
 
-- ```url``` - theURL to your Secret Server instance
+- ```url``` - the Url to your Secret Server instance
 - ```rule``` - the name of an onboarding rule you have created
 - ```key``` - the onboarding key for that rule, if applicable
 
 ```python
+from secret_server.sdk_client import  SdkClient
+client = SdkClient()
 client.configure(url='https://myserver/SecretServer',rule='OnboardingRule', key='oB0arD1ngKey')
 
 # Or
@@ -57,35 +57,10 @@ creds = {
   "key" : "oB0arD1ngKey"
 }
 client.configure(**creds)
+# Alternatively, you can define environment variables and the client will automatically use them
+client.configure()
+
 ```
-
-Another way to configure the connection to your Secret Server instance:
-
-```python
-client.config.SDK_CONFIG['path'] = os.environ.get('HOME') + '\\tss\\'
-client.config.SDK_CONFIG['url'] = 'https://myserver/SecretServer'
-client.config.SDK_CONFIG['rule'] = 'OnboardingRule'
-client.config.SDK_CONFIG['key'] = 'oB0arD1ngKey'
-```
-
-Alternatively, you can also pull configuration from the current environment using the
-os.environ object:
-
-The methods sets the config using the following variables
-
-```python
-os.environ.get('SDK_CLIENT_PATH')
-os.environ.get('SECRET_SERVER_URL')
-os.environ.get('SDK_CLIENT_RULE')
-os.environ.get('SDK_CLIENT_KEY')
-```
-
-Initialize the connection to the Secret Server:
-
-```python
-client.commands.initialize()
-```
-
 Once the configuration and initialization are complete, they do not need to be run again.
 Encrypted configuration files created in the current directory will be used to establish the
 connection to Secret Server instance.
@@ -96,19 +71,24 @@ Fetch a secret by ID
 
 ```python
 # retrieve the full representation of a secret
-secret = client.commands.get_secret(1)
-
-# retrieve only the secret fields
-secret = client.commands.get_secret(1, field = 'all')
+from secret_server.sdk_client import  SdkClient
+client = SdkClient()
+secret = client.get_secret(1)
 
 # retrieve only a single secret field value by slug
-password = client.commands.get_secret(1, field = 'password')
+password = client.get_secret_field(1, 'password')
 ```
 
 To remove the connection to Secret Server and delete all configuration:
 
-```python
-client.commands.remove()
+``` python
+from secret_server.sdk_client import  SdkClient
+client = SdkClient()
+client.remove()
+# OR
+client.remove(True)
+# True will revoke the client in Secret Server as well. Proper permissions by the API account are required
+
 ```
 
 ## Cache Settings
@@ -128,6 +108,8 @@ To change this behavior, set the cache strategy using the
 Examples of setting cache:
 
 ```python
+from secret_server.sdk_client import  SdkClient
+client = SdkClient()
 # The default (never cache secrets). Cache age is optional for this choice
 client.set_cache(0)
 
@@ -153,6 +135,7 @@ client.commands.clear_cache()
 ## Authors
 
 Paulo Dorado
+Ali Falahi - Rewrote the package to remove reliance on the CLI
 
 ## License
 

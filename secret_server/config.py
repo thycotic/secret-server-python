@@ -14,8 +14,8 @@ class Config:
         "clientId": uuid4(),
         "description": "Machine: {node}, OS: {system} - Python {version}".format(node=node(), system=system(), version=_sys_version()[1]),
         "name": node(),
-        "ruleName": '' or environ.get("RULE_NAME"),
-        "onboardingKey": '' or environ.get("RULE_KEY")
+        "ruleName": '' or environ.get("SECRET_SERVER_RULE_NAME"),
+        "onboardingKey": '' or environ.get("SECRET_SERVER_RULE_KEY")
     }
 
     BASE_URL = '' or str(environ.get("SECRET_SERVER_BASE_URL")).rstrip("/")
