@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from secret_server.config import Config
-from secret_server.commands import AccessToken
+from secret_server.commands import get_token
 from secret_server.commands import Secret
 
 
@@ -13,7 +13,7 @@ class SdkClient:
         return cls.__singleton
 
     def __init__(self):
-        self.token = AccessToken.get_token
+        self.token = get_token
         self.ssl_verify = Config.SSL_VERIFY
 
     @classmethod
@@ -44,7 +44,10 @@ class SdkClient:
 
         :param bool revoke: True/False to revoke client in Secret Server. Default is False
         """
-        Config.remove_client(revoke)
+        try:
+            Config.remove_client(revoke)
+        except Exception:
+            raise
     
     @classmethod
     def get_secret(cls, s_id):

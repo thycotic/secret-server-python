@@ -61,32 +61,47 @@ class Config:
             print("Client Registered")
         else:
             print("client already registered")
-    
+
+    @classmethod
+    def load_endpoint(cls):
+        if path.isfile(cls.CLIENT_PATH):
+            cls.endpoint = json.loads(cls.__decrypt(cls.CLIENT_PATH))["endpoint"]
+        else:
+            cls.endpoint = cls.BASE_URL
+        return str(cls.endpoint)
+
+    @classmethod
+    def load_credentials(cls):
+        if path.isfile(cls.CREDS_PATH):
+            cls.creds = json.loads(cls.__decrypt(cls.CREDS_PATH))
+        return cls.creds
+
     @classmethod
     def remove_client(cls, revoke):
         # This method removes the client configuration from disk. There is an optional revoke param which removes the
         # client from secret server as well
-        if path.exists(cls.CLIENT_PATH):
-            if revoke:
-                import secret_server.commands as commands
-                token = commands.AccessToken.get_token()
-                client_id = json.loads(cls.__decrypt(cls.CLIENT_PATH))["id"]
-                base_url = json.loads(DataProtection().decrypt(Config.CLIENT_PATH))["endpoint"] if \
-                    path.isfile(Config.CLIENT_PATH) else Config.BASE_URL
-                resp = requests.post(
-                    "{base_url}/api/v1/sdk-client-accounts/{client_id}/revoke".format(base_url=base_url,
-                    client_id=client_id),
-                    headers={"Authorization": "bearer {token}".format(token=token)},
-                    verify=False
-                )
 
-                if resp.status_code is not 200:
-                    print(resp.json()["body"])
-                    
-                resp.close()
+        if revoke:
+            from secret_server.commands import get_token
+            token = get_token()
+            client_id = json.loads(cls.__decrypt(cls.CLIENT_PATH))["id"]
+            base_url = cls.load_endpoint()
+            resp = requests.post(
+                "{}/api/v1/sdk-client-accounts/{}/revoke".format(base_url, client_id),
+                headers={"Authorization": "bearer {token}".format(token=token)},
+                verify=False
+            )
+
+            if resp.status_code is not 200:
+                print(resp.json()["body"])
+
+            resp.close()
+        if path.isfile(cls.CLIENT_PATH):
             remove(cls.CLIENT_PATH)
+        cls.endpoint = None
+        if path.isfile(cls.CREDS_PATH):
             remove(cls.CREDS_PATH)
-            DataProtection.remove_master_key()
-            print("Client unregistered")
-        else:
-            print("Client already unregistered")
+        cls.creds = None
+        DataProtection.remove_master_key()
+
+
