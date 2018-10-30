@@ -105,9 +105,10 @@ venv.bak/
 
 #workspace settings
 .vscode/
+.idea/workspace.xml
+.idea/modules.xml
 
 # testing files that should be ignored
 tests.py
 creds.json
 client_info.json
-masterKey.config

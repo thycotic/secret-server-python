@@ -31,25 +31,32 @@ from secret_server.sdk_client import SDK_Client
 Instantiate the ```SDK_Client``` object
 
 ```python
-client = SDK_Client()
+client = SDK_Client
 ```
 
 Configure the connection to your Secret Server instance by using the
 
 ``` python
-configure(<sdk_path>, <url>, <rule>, <key>)
+configure(<url>, <rule>, <key>)
 ```
 
 **required parameters:**
 
-- ```sdk_path``` - the path to the directory containing the SDK client
 - ```url``` - theURL to your Secret Server instance
 - ```rule``` - the name of an onboarding rule you have created
 - ```key``` - the onboarding key for that rule, if applicable
 
 ```python
-client.configure(os.environ.get('HOME') + '\\tss\\', 'https://myserver/SecretServer',
-                 'OnboardingRule', 'oB0arD1ngKey')
+client.configure(url='https://myserver/SecretServer',rule='OnboardingRule', key='oB0arD1ngKey')
+
+# Or
+
+creds = {
+  "url" :"https://myserver/SecretServer",
+  "rule" : "OnboardingRuleName",
+  "key" : "oB0arD1ngKey"
+}
+client.configure(**creds)
 ```
 
 Another way to configure the connection to your Secret Server instance:
@@ -63,10 +70,6 @@ client.config.SDK_CONFIG['key'] = 'oB0arD1ngKey'
 
 Alternatively, you can also pull configuration from the current environment using the
 os.environ object:
-
-```python
-client.configure_from_env()
-```
 
 The methods sets the config using the following variables
 

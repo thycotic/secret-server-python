@@ -1,52 +1,59 @@
 # -*- coding: utf-8 -*-
 import requests
 import json
-import platform
-import os
 
+from os import (environ, path, remove)
+from platform import (system, _sys_version, node)
 from uuid import uuid4
-from secret_server.data_protection import DataProtection
+from secret_server.DataProtection import DataProtection
+
 
 class Config:
+    # These are the arguments required to create a client in Secret Server
     CLIENT_CONFIG = {
-        'clientId' : uuid4(),
-        'description' : 'Machine: {node}, OS: {system} - Python {version}'.format(node = platform.node(), system = platform.system(), version = platform._sys_version()[1]),
-        'name' : platform.node(),
-        'ruleName' : '' or os.environ.get('RULE_NAME'),
-        'onboardingKey' : '' or os.environ.get('RULE_KEY')
+        "clientId": uuid4(),
+        "description": "Machine: {node}, OS: {system} - Python {version}".format(node=node(), system=system(), version=_sys_version()[1]),
+        "name": node(),
+        "ruleName": '' or environ.get("RULE_NAME"),
+        "onboardingKey": '' or environ.get("RULE_KEY")
     }
-    BASE_URL = '' or os.environ.get('SECRET_SERVER_BASE_URL')
+
+    BASE_URL = '' or str(environ.get("SECRET_SERVER_BASE_URL")).rstrip("/")
 
     CREDS_PATH = "creds.json"
     CLIENT_PATH = "client_info.json"
+    API_VERSION = "v1"
+    SSL_VERIFY = False
 
     __encrypt = DataProtection().encrypt
     __decrypt = DataProtection().decrypt
 
     @classmethod
     def register_client(cls):
-        if not os.path.exists(cls.CREDS_PATH):
-            resp = requests.post(cls.BASE_URL+"/api/v1/sdk-client-accounts", data = cls.CLIENT_CONFIG, verify=False)
+        if not path.exists(cls.CREDS_PATH):
+            resp = requests.post(cls.BASE_URL+"/api/v1/sdk-client-accounts", data=cls.CLIENT_CONFIG, verify=False)
+            # The SDK accounts support client credentials grant type. We generate the clientID in our Python client
+            # and Secret Server generates the ClientSecret
             creds = {
-                "client_id" : "sdk-client-"+resp.json()["clientId"],
-                "client_secret" : resp.json()["clientSecret"],
-                "grant_type" : "client_credentials"
+                "client_id": "sdk-client-"+resp.json()["clientId"],
+                "client_secret": resp.json()["clientSecret"],
+                "grant_type": "client_credentials"
             }
-            creds = cls.__encrypt(creds)
+            # In order to easily consume the credentials by the requests package, we use
+            # json.dumps before we encrypt the data
+            creds = cls.__encrypt(json.dumps(creds))
             try:
-                open(cls.CREDS_PATH , "w").write(creds)
-                creds = None
+                open(cls.CREDS_PATH, "w").write(creds)
             except IOError as e:
                 raise IOError("Couldn't Save credentials: ", e)
 
             config = {
-                "id" : resp.json()["id"],
-                "endpoint" : cls.BASE_URL
+                "id": resp.json()["id"],
+                "endpoint": cls.BASE_URL
             }
-            config = cls.__encrypt(config)
+            config = cls.__encrypt(json.dumps(config))
             try:
-                open(cls.CLIENT_PATH , "w").write(config)
-                config = None
+                open(cls.CLIENT_PATH, "w").write(config)
             except IOError as e:
                 raise IOError("Couldn't Save client info: ", e)
 
@@ -57,19 +64,29 @@ class Config:
     
     @classmethod
     def remove_client(cls, revoke):
-        if os.path.exists(cls.CLIENT_PATH):
+        # This method removes the client configuration from disk. There is an optional revoke param which removes the
+        # client from secret server as well
+        if path.exists(cls.CLIENT_PATH):
             if revoke:
                 import secret_server.commands as commands
                 token = commands.AccessToken.get_token()
-                client_id = cls.__decrypt(cls.CLIENT_PATH)["id"]
-                resp = requests.post("{base_url}/api/v1/sdk-client-accounts/{id}/revoke".format(base_url=cls.BASE_URL,id=client_id), headers={"Authorization" : "bearer {token}".format(token=token)},verify=False)
+                client_id = json.loads(cls.__decrypt(cls.CLIENT_PATH))["id"]
+                base_url = json.loads(DataProtection().decrypt(Config.CLIENT_PATH))["endpoint"] if \
+                    path.isfile(Config.CLIENT_PATH) else Config.BASE_URL
+                resp = requests.post(
+                    "{base_url}/api/v1/sdk-client-accounts/{client_id}/revoke".format(base_url=base_url,
+                    client_id=client_id),
+                    headers={"Authorization": "bearer {token}".format(token=token)},
+                    verify=False
+                )
 
                 if resp.status_code is not 200:
                     print(resp.json()["body"])
                     
                 resp.close()
-            os.remove(cls.CLIENT_PATH)
-            os.remove(cls.CREDS_PATH)
+            remove(cls.CLIENT_PATH)
+            remove(cls.CREDS_PATH)
+            DataProtection.remove_master_key()
             print("Client unregistered")
         else:
             print("Client already unregistered")

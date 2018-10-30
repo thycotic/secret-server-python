@@ -3,14 +3,16 @@ class ApiError(Exception):
         super(ApiError, self).__init__(message)
         self.message = message
         self.response = {
-            "Error Code" : self.message,
-            "statusCode" : response.status_code,
-            "Message" : response.json()["message"]
+            "Error Code": self.message,
+            "statusCode": response.status_code,
+            "Message": response.json()["message"]
         }
+
     def __str__(self):
         return repr(self.response)
 
-def HandleApiResponse(response):
+
+def handle_api_response(response):
     if response.status_code is not 200 and response.status_code is not 204:
         if 'errorCode' in response.json():
             if response.json() and response.json()["errorCode"] and len(response.json()["errorCode"]) > 0:
