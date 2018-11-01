@@ -12,7 +12,7 @@ class ApiError(Exception):
         return repr(self.response)
 
 
-def handle_api_response(response):
+def api_response(response):
     if response.status_code is not 200 and response.status_code is not 204:
         if 'errorCode' in response.json():
             if response.json() and response.json()["errorCode"] and len(response.json()["errorCode"]) > 0:

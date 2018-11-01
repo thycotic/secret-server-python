@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import requests
 
-from secret_server.api_response_handler import handle_api_response as handler
+from secret_server.response_handler import api_response as handler
 from secret_server.config import Config
 from requests.compat import urljoin
 
