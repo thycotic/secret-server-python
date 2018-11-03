@@ -9,6 +9,8 @@ from secret_server.DataProtection import DataProtection
 
 
 class Config:
+    # def __init__(self):
+
     # These are the arguments required to create a client in Secret Server
     CLIENT_CONFIG = {
         "clientId": uuid4(),
