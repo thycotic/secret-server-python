@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="secret-server-sdk-client",
-    version="1.0",
+    version="1.1",
     author="Paulo Dorado",
     author_email="support@thycotic.com",
     description="Thycotic python client that uses the Thycotic SDK to get secrets from secret server",

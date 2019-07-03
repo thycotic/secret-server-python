@@ -140,7 +140,7 @@ client.set_cache(2, 10)
 
 # Same as the above mode, but allow an expired cached value to be used if the server 
 # is unavailable.
-# Cache Then Server Fallback on Expired Cache for 15 minutes
+# Cache Then Server Fallback on Expired Cache for 15 minutes
 client.set_cache(3, 15)
 
 # Clear all cached values immediately
