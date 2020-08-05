@@ -1,3 +1,5 @@
+# *NOTE**: This package has been superseded by [thycotic/python-tss-sdk](https://github.com/thycotic/python-tss-sdk)
+
 # Thycotic SDK Python Package
 
 A Python package to facilitate the connection to the Thycotic Secret Server
