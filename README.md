@@ -1,4 +1,4 @@
-# *NOTE**: This package has been superseded by [thycotic/python-tss-sdk](https://github.com/thycotic/python-tss-sdk)
+# **NOTE**: This package has been superseded by [thycotic/python-tss-sdk](https://github.com/thycotic/python-tss-sdk)
 
 # Thycotic SDK Python Package
 
